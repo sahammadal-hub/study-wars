@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Study Wars 🎓️ - The Arena</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@400;600;700;800&family=Teko:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a1a; --card: #12122a; --card2: #1a1a35;
+    --accent: #f0c040; --accent2: #ff6b6b; --accent3: #4ecdc4;
+    --text: #e8e8ff; --muted: #7070aa; --border: rgba(255,255,255,0.07);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { font-family: 'Baloo Da 2', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+  
+  .screen { display:none; flex-direction:column; min-height:100vh; position:relative; z-index:1; padding-bottom: 30px; }
+  .screen.active { display:flex; animation: fadeIn 0.35s ease; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  @keyframes flame { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+
+  .top-bar { display:flex; align-items:center; gap:12px; padding: 16px; background: rgba(10,10,26,0.9); position: sticky; top:0; z-index:10; }
+  .back-btn { width:36px; height:36px; border-radius:50%; background: var(--card); border:1px solid var(--border); display:flex;align-items:center;justify-content:center; font-size:16px; cursor: pointer; }
+
+  .btn { padding: 14px; border-radius: 14px; font-size: 16px; font-weight: 700; border: none; width: 100%; text-align: center; cursor: pointer; transition: 0.2s;}
+  .btn:active { transform: scale(0.95); }
+  .btn-primary { background: linear-gradient(135deg, var(--accent3), #06b6d4); color: #0a0a1a; }
+  .btn-danger { background: linear-gradient(135deg, var(--accent2), #ff4757); color: #fff; }
+  .btn-secondary { background: var(--card2); color: white; border: 1px solid var(--border); }
+  
+  .input-field { width: 100%; padding: 16px; border-radius: 16px; background: var(--card); border: 2px solid var(--accent3); color: var(--text); font-size: 18px; text-align: center; outline: none; }
+  
+  .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 16px; }
+  .menu-btn { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 20px 16px; text-align: center; cursor: pointer; }
+  .menu-btn.full { grid-column: 1/-1; background: linear-gradient(135deg, rgba(78,205,196,0.1), rgba(6,182,212,0.1)); border-color: rgba(78,205,196,0.3); }
+  .menu-btn .icon { font-size: 32px; display:block; margin-bottom: 8px; }
+  .menu-btn .label { font-size: 14px; font-weight: 600; }
+  
+  .user-card { margin: 16px; background: linear-gradient(135deg, var(--card), var(--card2)); border: 1px solid var(--border); border-radius: 20px; padding: 20px; display: flex; align-items:center; gap:16px; }
+  .avatar { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), #ff9500); display:flex; align-items:center; justify-content:center; font-size: 26px; font-weight:800; color: #0a0a1a; }
+  
+  .spinner-wheel { width: 280px; height: 280px; border-radius: 50%; margin: 20px auto; border: 8px solid var(--accent); position: relative; display: flex; align-items: center; justify-content: center; font-size: 80px; background: conic-gradient(from 0deg, #ff6b6b, #f0c040, #4ecdc4, #a855f7, #ff6b6b); animation: spin 3s linear infinite; cursor: pointer; box-shadow: 0 0 40px rgba(240,192,64,0.3); }
+  .spinner-wheel.spinning { animation: spin 0.05s linear infinite; }
+  .spinner-pointer { position: absolute; top: -20px; width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-top: 20px solid var(--accent); z-index: 10; }
+  
+  .list-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin: 0 16px 10px; display: flex; align-items: center; gap: 12px; }
+  .lb-rank { font-family: 'Teko', sans-serif; font-size: 24px; font-weight: 700; width: 30px; text-align: center; }
+  .lb-name { flex: 1; font-weight: 600; font-size: 16px; }
+  .lb-score { font-family: 'Teko', sans-serif; font-size: 24px; color: var(--accent); }
+  
+  .badge { display: inline-block; background: var(--accent2); color: white; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; margin: 2px; }
+  .badge.gold { background: #ffd700; color: #0a0a1a; }
+  .badge.diamond { background: #a855f7; }
+  
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--accent3); color: #000; padding: 12px 24px; border-radius: 30px; font-weight: 700; transition: 0.3s; z-index: 9999; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  
+  .tabs { display: flex; gap: 8px; padding: 0 16px 16px; }
+  .tab-btn { flex: 1; padding: 10px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; }
+  .tab-btn.active { background: var(--accent3); color: #0a0a1a; }
+  .tab-btn.inactive { background: var(--card); color: white; border: 1px solid var(--border); }
+  
+  .team-card { background: var(--card); border-radius: 14px; padding: 16px; margin: 0 16px 12px; }
+  .team-header { font-weight: 700; font-size: 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  
+  .badge-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  
+  .announcement-bar { background: linear-gradient(135deg, rgba(255,107,107,0.2), rgba(168,85,247,0.2)); border: 1px solid rgba(255,107,107,0.3); border-radius: 12px; padding: 12px; margin: 16px; color: var(--accent); font-weight: 600; text-align: center; font-size: 14px; }
+  
+  .cheer-btn { background: var(--card2); border: 1px solid var(--border); padding: 8px 12px; border-radius: 20px; font-size: 16px; cursor: pointer; margin-left: 8px; }
+  .cheer-btn:active { animation: pulse 0.3s; }
+  
+  .weekend-flame { animation: flame 1.5s ease-in-out infinite; color: #ff6b6b; font-size: 20px; }
+  
+  .admin-input { width: 100%; padding: 12px; border-radius: 12px; background: var(--card); border: 1px solid var(--accent3); color: var(--text); margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<div id="announcement-bar" class="announcement-bar" style="display:none;"></div>
+
+<div class="screen active" id="screen-register" style="justify-content:center; align-items:center; padding:24px;">
+  <h1 style="font-family:'Teko'; font-size:48px; color:var(--accent);">STUDY WARS 🎓️</h1>
+  <p style="color:var(--muted); margin-bottom: 24px;">নিজের নাম লিখুন এবং টিমে যোগ দিন</p>
+  <input type="text" id="reg-name" class="input-field" placeholder="তোমার নাম...">
+  <select id="reg-team" class="input-field" style="margin-top:16px;">
+    <option value="">টিম বেছে নাও</option>
+    <option value="Alpha">Team Alpha 🔥</option>
+    <option value="Beta">Team Beta 💧</option>
+    <option value="Gamma">Team Gamma ⚡</option>
+    <option value="Delta">Team Delta 💜</option>
+  </select>
+  <button class="btn btn-primary" style="margin-top:16px;" onclick="registerUser()">প্রবেশ করো 🎮</button>
+</div>
+
+<div class="screen" id="screen-home">
+  <div style="text-align:center; padding:30px 20px 10px;">
+    <div style="font-family:'Teko'; font-size:38px; font-weight:700; color:var(--accent);">STUDY WARS</div>
+  </div>
+
+  <div id="champion-section" style="display:none; text-align:center; padding:16px; margin:0 16px; background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(255,237,74,0.1)); border: 2px solid #ffd700; border-radius: 16px; margin-bottom: 16px;">
+    <div style="font-size: 20px; font-weight: 700; color: #ffd700; margin-bottom: 8px;">👑 আজকের চ্যাম্পিয়ন 👑</div>
+    <div id="champion-name" style="font-size: 18px; color: var(--accent3);"></div>
+  </div>
+
+  <div id="weekend-banner" style="display:none; text-align:center; padding:14px; margin:0 16px 16px; background: linear-gradient(135deg, rgba(255,107,107,0.15), rgba(255,200,0,0.15)); border: 2px solid #ff6b6b; border-radius: 14px;">
+    <div style="font-size: 18px; font-weight: 700; margin-bottom: 4px;"><span class="weekend-flame">🔥 WEEKEND GRAND PRIX! 🔥</span></div>
+    <div style="font-size: 12px; color: var(--muted);">এই সপ্তাহান্তে পড়লে পয়েন্ট দ্বিগুণ হবে!</div>
+  </div>
+
+  <div class="user-card">
+    <div class="avatar" id="h-avatar">?</div>
+    <div style="flex:1;">
+      <div style="font-size:20px; font-weight:700;" id="h-name">Name</div>
+      <div style="font-size:13px; color:var(--accent3); font-weight:600;">লেভেল: <span id="h-level">1</span> (<span id="h-level-name">Novice</span>)</div>
+      <div style="font-size:12px; color:var(--muted);">🔥 স্ট্রিক: <span id="h-streak">0</span> | 🏆 টিম: <span id="h-team">-</span></div>
+      <div style="font-size:12px; color:var(--accent2);">⭐ XP: <span id="h-xp">0</span> | 🎁 রেফার বোনাস: <span id="h-refer-bonus">0</span> XP</div>
+    </div>
+  </div>
+
+  <div style="padding: 0 16px; margin-bottom: 16px;">
+    <div style="background: var(--card); border-radius: 12px; padding: 12px; font-size: 12px; color: var(--muted);">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+        <span>পরবর্তী লেভেলে:</span>
+        <span id="h-progress-text">0%</span>
+      </div>
+      <div style="background: var(--card2); border-radius: 8px; height: 12px; overflow: hidden;">
+        <div id="h-progress-bar" style="background: linear-gradient(90deg, var(--accent), var(--accent3)); height: 100%; width: 0%; transition: width 0.3s;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:12px; padding:0 16px 20px;">
+    <div style="flex:1; background:var(--card); border-radius:16px; padding:16px; text-align:center;">
+      <div style="font-family:'Teko'; font-size:32px; color:var(--accent); line-height:1;" id="h-today">0.0</div>
+      <div style="font-size:12px; color:var(--muted);">আজকের পড়া</div>
+    </div>
+    <div style="flex:1; background:var(--card); border-radius:16px; padding:16px; text-align:center;">
+      <div style="font-family:'Teko'; font-size:32px; color:var(--accent); line-height:1;" id="h-weekly">0.0</div>
+      <div style="font-size:12px; color:var(--muted);">এই সপ্তাহে</div>
+    </div>
+  </div>
+
+  <div id="badges-section" style="padding: 0 16px 16px;">
+    <div style="font-weight: 700; color: var(--accent); margin-bottom: 8px;">অর্জিত ব্যাজ:</div>
+    <div id="badges-display" class="badge-list"></div>
+  </div>
+
+  <div style="padding: 0 16px 16px;">
+    <div style="background: var(--card); border-radius: 12px; padding: 12px; font-size: 13px;">
+      <div style="margin-bottom: 8px;"><span style="color: var(--accent);">⏳ বোনাস:</span> <span id="h-bonus-hours" style="color: var(--accent3);">0h</span> | <span style="color: var(--accent);">⭐ XP:</span> <span id="h-bonus-xp" style="color: var(--accent2);">0</span></div>
+    </div>
+  </div>
+
+  <div class="menu-grid">
+    <div class="menu-btn full" onclick="goTo('screen-timer')">
+      <span class="icon">⏱️</span><div class="label">সময় যোগ করো (Timer/Manual)</div>
+    </div>
+    <div class="menu-btn" onclick="goTo('screen-todo')">
+      <span class="icon">📝</span><div class="label">টু-ডু লিস্ট</div>
+    </div>
+    <div class="menu-btn" onclick="goTo('screen-spinner')">
+      <span class="icon">🎰</span><div class="label">স্পিনার</div>
+    </div>
+    <div class="menu-btn" onclick="goTo('screen-challenge')">
+      <span class="icon">🎓️</span><div class="label">1v1 আরেনা</div>
+    </div>
+    <div class="menu-btn" onclick="goTo('screen-leaderboard')">
+      <span class="icon">🏆</span><div class="label">লিডারবোর্ড</div>
+    </div>
+    <div class="menu-btn" onclick="goTo('screen-teams')">
+      <span class="icon">👥</span><div class="label">টিম বোর্ড</div>
+    </div>
+    <div class="menu-btn" onclick="goTo('screen-history')">
+      <span class="icon">📋</span><div class="label">হিস্ট্রি</div>
+    </div>
+    <div id="admin-btn" class="menu-btn" onclick="goTo('screen-admin')" style="display:none;">
+      <span class="icon">⚙️</span><div class="label">অ্যাডমিন</div>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="screen-timer">
+  <div class="top-bar"><div class="back-btn" onclick="goTo('screen-home')">←</div><div style="font-weight:700; font-size:18px;">সময় যোগ করো</div></div>
+  
+  <div style="padding: 24px 16px; text-align:center;">
+    <div style="background:rgba(78,205,196,0.05); border:2px solid rgba(78,205,196,0.3); border-radius:24px; padding:40px 20px; margin-bottom:24px;">
+      <div id="timer-display" style="font-family:'Teko'; font-size:64px; font-weight:700; color:var(--accent3); line-height:1;">00:00:00</div>
+    </div>
+    <div style="display:flex; gap:12px; margin-bottom:30px;">
+      <button class="btn btn-primary" id="btn-start" onclick="startTimer()">▶️ শুরু</button>
+      <button class="btn btn-danger" id="btn-stop" onclick="stopTimer()" style="display:none;">⏹️ থামান</button>
+      <button class="btn btn-secondary" onclick="submitTimer()">✅ সেভ</button>
+    </div>
+
+    <div style="border-top:1px solid var(--border); padding-top:24px;">
+      <p style="color:var(--muted); margin-bottom:16px;">অথবা ম্যানুয়ালি সময় বসান</p>
+      <div style="display:flex; gap:16px; margin-bottom:16px;">
+        <input type="number" id="man-h" class="input-field" placeholder="ঘণ্টা" min="0">
+        <input type="number" id="man-m" class="input-field" placeholder="মিনিট" min="0">
+      </div>
+      <button class="btn btn-primary" onclick="submitManual()">✅ ম্যানুয়াল সময় যোগ</button>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="screen-spinner">
+  <div class="top-bar"><div class="back-btn" onclick="goTo('screen-home')">←</div><div style="font-weight:700; font-size:18px;">স্পিনার 🎰</div></div>
+  
+  <div style="padding: 20px 16px; text-align: center;">
+    <p style="color: var(--muted); margin-bottom: 20px;">এইখানের অপোনেন্ট খুঁজে পেতে স্পিনারটি ঘুরান!</p>
+    
+    <div style="position: relative; margin-bottom: 30px;">
+      <div class="spinner-pointer"></div>
+      <div class="spinner-wheel" id="spinner" onclick="spinTheWheel()">🎡</div>
+    </div>
+    
+    <div id="spinner-result" style="display:none; background: var(--card); border-radius: 16px; padding: 20px; margin-bottom: 20px;">
+      <p style="color: var(--muted); font-size: 14px; margin-bottom: 10px;">আপনার অপোনেন্ট:</p>
+      <div style="font-size: 24px; font-weight: 700; color: var(--accent3); margin-bottom: 10px;" id="spinner-opponent-name">-</div>
+      <div style="font-size: 14px; color: var(--muted); margin-bottom: 10px;">লেভেল: <span id="spinner-opponent-level">-</span> | টিম: <span id="spinner-opponent-team">-</span></div>
+    </div>
+    
+    <button class="btn btn-primary" id="spinner-match-btn" onclick="acceptSpinMatch()" style="display:none;">✅ ম্যাচ শুরু করো</button>
+  </div>
+</div>
+
+<div class="screen" id="screen-todo">
+  <div class="top-bar"><div class="back-btn" onclick="goTo('screen-home')">←</div><div style="font-weight:700; font-size:18px;">টু-ডু লিস্ট</div></div>
+  <div style="padding:0 16px 16px; display:flex; gap:8px;">
+    <input type="text" id="todo-input" class="input-field" style="padding:12px; font-size:14px;" placeholder="নতুন টাস্ক...">
+    <button class="btn btn-primary" style="width:auto; padding:12px 20px;" onclick="addTodo()">+</button>
+  </div>
+  <div id="todo-container"></div>
+</div>
+
+<div class="screen" id="screen-challenge">
+  <div class="top-bar"><div class="back-btn" onclick="goTo('screen-home')">←</div><div style="font-weight:700; font-size:18px;">1v1 আরেনা 🎓️</div></div>
+  
+  <div id="arena-wait" style="text-align:center; padding:40px 20px;">
+    <p style="color:var(--muted); margin-bottom:16px;">সমমনা খেলোয়াড়ের সাথে দ্রুত যুদ্ধ মিলিবে!</p>
+    <button class="btn btn-primary" id="btn-find-match" onclick="findMatch();">🔍 ম্যাচ খুঁজুন</button>
+    <div id="waiting-msg" style="display:none; margin-top:20px; color:var(--accent);">অপোনেন্টের জন্য অপেক্ষা করা হচ্ছে... 🔄</div>
+    <div id="queue-count" style="display:none; margin-top:10px; color:var(--muted); font-size:14px;"></div>
+  </div>
+
+  <div id="arena-live" style="display:none; padding:16px;">
+    <div style="background:linear-gradient(135deg, rgba(255,107,107,0.1), rgba(168,85,247,0.1)); border:1px solid var(--accent2); border-radius:16px; padding:20px;">
+      <h3 style="text-align:center; color:var(--accent); margin-bottom:16px;">🔥 লাইভ ম্যাচ 🔥</h3>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <div style="text-align:center; width:40%;">
+          <div style="font-weight:700; font-size:14px;" id="c-my-name">Me</div>
+          <div style="font-family:'Teko'; font-size:28px; color:var(--accent);" id="c-my-score">0.0h</div>
+        </div>
+        <div style="font-family:'Teko'; font-size:24px; color:var(--muted);">VS</div>
+        <div style="text-align:center; width:40%;">
+          <div style="font-weight:700; font-size:14px;" id="c-op-name">Opponent</div>
+          <div style="font-family:'Teko'; font-size:28px; color:var(--accent);" id="c-op-score">0.0h</div>
+        </div>
+      </div>
+      <button class="btn btn-danger" onclick="cancelMatch();">❌ ম্যাচ ছেড়ে দিন</button>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="screen-leaderboard">
+  <div class="top-bar"><div class="back-btn" onclick="goTo('screen-home')">←</div><div style="font-weight:700; font-size:18px;">🏆 লিডারবোর্ড</div></div>
+  
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-daily" onclick="renderLeaderboard('daily')">আজকে</button>
+    <button class="tab-btn inactive" id="tab-weekly" onclick="renderLeaderboard('weekly')">সাপ্তাহিক</button>
+  </div>
+  
+  <div id="lb-container"></div>
+</div>
+
+<div class="screen" id="screen-teams">
+  <div class="top-bar"><div class="back-btn" onclick="goTo('screen-home')">←</div><div style="font-weight:700; font-size:18px;">👥 টিম বোর্ড</div></div>
+  
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-team-daily" onclick="renderTeamBoard('daily')">আজকে</button>
+    <button class="tab-btn inactive" id="tab-team-weekly" onclick="renderTeamBoard('weekly')">সাপ্তাহিক</button>
+  </div>
+  
+  <div id="team-container"></div>
+</div>
+
+<div class="screen" id="screen-history">
+  <div class="top-bar"><div class="back-btn" onclick="goTo('screen-home')">←</div><div style="font-weight:700; font-size:18px;">📋 হিস্ট্রি</div></div>
+  
+  <div style="padding: 16px;">
+    <div id="history-container"></div>
+  </div>
+</div>
+
+<div class="screen" id="screen-admin">
+  <div class="top-bar"><div class="back-btn" onclick="goTo('screen-home')">←</div><div style="font-weight:700; font-size:18px;">⚙️ অ্যাডমিন প্যানেল</div></div>
+  
+  <div style="padding: 16px;">
+    <h3 style="margin-bottom: 12px; color: var(--accent);">📢 ঘোষণা পাঠান</h3>
+    <textarea id="admin-msg" class="admin-input" style="height: 100px; resize: vertical;" placeholder="আপনার বার্তা লিখুন..."></textarea>
+    <button class="btn btn-primary" onclick="sendAnnouncement()" style="margin-bottom: 24px;">📣 সবাইকে পাঠান</button>
+
+    <h3 style="margin-bottom: 12px; color: var(--accent);">👑 বিজয়ী নির্ধারণ</h3>
+    <div style="background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+      <div style="margin-bottom: 12px;">
+        <p style="color: var(--muted); font-size: 12px; margin-bottom: 6px;">আজকের চ্যাম্পিয়ন:</p>
+        <select id="admin-daily-winner" class="admin-input"></select>
+      </div>
+      <div>
+        <p style="color: var(--muted); font-size: 12px; margin-bottom: 6px;">এই সপ্তাহের চ্যাম্পিয়ন:</p>
+        <select id="admin-weekly-winner" class="admin-input"></select>
+      </div>
+      <button class="btn btn-primary" style="margin-top: 12px;" onclick="setWinners();">🏆 বিজয়ী সেট করো</button>
+    </div>
+
+    <h3 style="margin-bottom: 12px; color: var(--accent);">📊 সবার পরিসংখ্যান</h3>
+    <div id="admin-stats" style="background: var(--card); border-radius: 12px; padding: 16px;"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Message</div>
+
+<script>
+// =============================================================================
+// GLOBAL STATE
+// =============================================================================
+const tg = window.Telegram?.WebApp;
+if(tg) { tg.ready(); tg.expand(); }
+
+const API_URL = "http://127.0.0.1:5000/api";
+let db = { 
+  myId: null, 
+  myTeam: null,
+  users: {}, 
+  activeOpponent: null, 
+  todos: [], 
+  spinResult: null,
+  announcement: "",
+  adminId: "5726202509"
+};
+let pollInterval = null;
+let timerSecs = 0, timerInt = null;
+
+// =============================================================================
+// UTILITY FUNCTIONS
+// =============================================================================
+function getLevelName(total) {
+  if (total < 20) return "Novice";
+  if (total < 50) return "Scholar";
+  if (total < 100) return "Master";
+  if (total < 150) return "Legend";
+  return "God Tier";
+}
+
+function getTeamColor(team) {
+  const colors = { Alpha: '#ff6b6b', Beta: '#4ecdc4', Gamma: '#f0c040', Delta: '#a855f7' };
+  return colors[team] || '#7070aa';
+}
+
+function isWeekend() {
+  const day = new Date().getDay();
+  return day === 5 || day === 6;
+}
+
+function getMultiplier() {
+  return isWeekend() ? 2 : 1;
+}
+
+function checkBadges() {
+  if (!db.myId || !db.users[db.myId]) return [];
+  const user = db.users[db.myId];
+  let badges = [];
+  
+  const hour = new Date().getHours();
+  if (hour < 6) badges.push({ name: 'Early Bird 🌅', type: 'gold' });
+  if (hour > 23) badges.push({ name: 'Night Owl 🦉', type: 'diamond' });
+  if (user.maxStreak && user.maxStreak >= 3) badges.push({ name: 'Marathoner 🏃‍♂️💨', type: 'diamond' });
+  
+  return badges;
+}
+
+function showToast(msg) { 
+  const t = document.getElementById('toast'); 
+  t.innerText = msg; 
+  t.classList.add('show'); 
+  setTimeout(() => t.classList.remove('show'), 2500); 
+}
+
+function goTo(screenId) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(screenId).classList.add('active');
+  window.scrollTo(0,0);
+  
+  if(screenId === 'screen-todo') renderTodos();
+  if(screenId === 'screen-leaderboard') renderLeaderboard('daily');
+  if(screenId === 'screen-teams') renderTeamBoard('daily');
+  if(screenId === 'screen-history') renderHistory();
+  if(screenId === 'screen-admin') loadAdminPanel();
+  if(screenId === 'screen-challenge') checkMatchStatus();
+}
+
+// =============================================================================
+// DATABASE OPERATIONS
+// =============================================================================
+async function fetchLiveDb() {
+  try {
+    const res = await fetch(API_URL + '/get_data');
+    const data = await res.json();
+    db.users = data.users || {};
+    db.announcement = data.announcement || "";
+    db.history = data.history || [];
+    checkResets(data);
+    updateHome();
+    loadChampionBadge();
+    updateWeekendBanner();
+    showAnnouncement();
+    if(document.getElementById('screen-leaderboard').classList.contains('active')) renderLeaderboard(currentLbMode);
+  } catch(e) { console.log("Offline mode", e); }
+}
+
+function checkResets(serverData) {
+  const today = new Date().toISOString().split('T')[0];
+  let needsSave = false;
+  
+  if(serverData.lastReset !== today) {
+    Object.values(db.users).forEach(u => {
+      if(u.daily > 0) u.streak += 1; else u.streak = 0;
+      u.maxStreak = Math.max(u.maxStreak || 0, u.streak);
+      u.daily = 0;
+    });
+    needsSave = true;
+  }
+  
+  if(needsSave) saveDb();
+}
+
+async function saveDb() {
+  if(!db.myId || !db.users[db.myId]) return;
+  try {
+    await fetch(API_URL + '/update_data', {
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ myId: db.myId, userData: db.users[db.myId], announcement: db.announcement })
+    });
+  } catch(e) {}
+}
+
+function loadChampionBadge() {
+  const dailyUser = Object.entries(db.users).sort((a, b) => b[1].daily - a[1].daily)[0];
+  if (dailyUser && dailyUser[1].daily > 0) {
+    document.getElementById('champion-name').innerText = dailyUser[1].name + " 👑";
+    document.getElementById('champion-section').style.display = 'block';
+  }
+}
+
+function updateWeekendBanner() {
+  const banner = document.getElementById('weekend-banner');
+  if (isWeekend()) {
+    banner.style.display = 'block';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+function showAnnouncement() {
+  const bar = document.getElementById('announcement-bar');
+  if (db.announcement && db.announcement !== "") {
+    bar.innerText = db.announcement;
+    bar.style.display = 'block';
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+// =============================================================================
+// REGISTER & HOME
+// =============================================================================
+function registerUser() {
+  const name = document.getElementById('reg-name').value.trim();
+  const team = document.getElementById('reg-team').value;
+  
+  if(!name || !team) return showToast('নাম এবং টিম সিলেক্ট করুন!');
+  
+  const tgUser = tg?.initDataUnsafe?.user;
+  const id = tgUser ? String(tgUser.id) : 'usr_' + Date.now();
+  
+  db.myId = id;
+  db.myTeam = team;
+  db.users[id] = { 
+    name: name, 
+    team: team,
+    daily: 0, 
+    weekly: 0, 
+    total: 0, 
+    streak: 0, 
+    maxStreak: 0,
+    tasksDone: 0,
+    badges: [],
+    lastCheered: {},
+    referred_count: 0,
+    bonus_hours: 0,
+    bonus_xp: 0,
+    xp: 0
+  };
+  
+  localStorage.setItem('studyWarsMyId', id);
+  localStorage.setItem('studyWarsTeam', team);
+  saveDb(); 
+  updateHome(); 
+  goTo('screen-home');
+}
+
+function updateHome() {
+  if(!db.myId || !db.users[db.myId]) return;
+  const me = db.users[db.myId];
+  document.getElementById('h-avatar').innerText = me.name.charAt(0).toUpperCase();
+  document.getElementById('h-name').innerText = me.name;
+  document.getElementById('h-streak').innerText = me.streak;
+  document.getElementById('h-team').innerText = me.team || '-';
+  document.getElementById('h-xp').innerText = me.xp || 0;
+  document.getElementById('h-refer-bonus').innerText = (me.referred_count || 0) * 100;
+  document.getElementById('h-today').innerText = (me.daily * getMultiplier()).toFixed(1);
+  document.getElementById('h-weekly').innerText = (me.weekly * getMultiplier()).toFixed(1);
+  
+  // Bonus calculations
+  const bonusHours = me.referred_count ? me.referred_count * 5 : 0;
+  const bonusXp = me.referred_count ? me.referred_count * 100 : 0;
+  document.getElementById('h-bonus-hours').innerText = bonusHours + 'h';
+  document.getElementById('h-bonus-xp').innerText = bonusXp;
+  
+  const level = Math.floor(me.total / 10) + 1;
+  const levelName = getLevelName(me.total);
+  document.getElementById('h-level').innerText = level;
+  document.getElementById('h-level-name').innerText = levelName;
+  
+  // Progress bar
+  const nextLevel = level * 10;
+  const currentStart = (level - 1) * 10;
+  const progress = ((me.total - currentStart) / 10) * 100;
+  document.getElementById('h-progress-bar').style.width = Math.min(progress, 100) + '%';
+  document.getElementById('h-progress-text').innerText = Math.round(Math.min(progress, 100)) + '%';
+  
+  // Badges
+  const badges = checkBadges();
+  let badgesHtml = badges.length > 0 ? badges.map(b => `<span class="badge ${b.type}">${b.name}</span>`).join('') : '<span style="color: var(--muted); font-size: 12px;">এখনো কোন ব্যাজ নেই</span>';
+  document.getElementById('badges-display').innerHTML = badgesHtml;
+  
+  // Admin check
+  if (db.myId === db.adminId) {
+    document.getElementById('admin-btn').style.display = 'block';
+  }
+}
+
+window.onload = async () => {
+  const tgUser = tg?.initDataUnsafe?.user;
+  const tgId = tgUser ? String(tgUser.id) : null;
+  const localId = localStorage.getItem('studyWarsMyId');
+  const activeId = tgId || localId;
+  
+  db.todos = JSON.parse(localStorage.getItem('studyWarsTodos') || '[]');
+  
+  await fetchLiveDb();
+  
+  if(activeId && db.users[activeId]) {
+    db.myId = activeId;
+    db.myTeam = db.users[activeId].team || localStorage.getItem('studyWarsTeam');
+    updateHome(); 
+    goTo('screen-home');
+  } else {
+    goTo('screen-register');
+  }
+  setInterval(fetchLiveDb, 5000);
+}
+
+// =============================================================================
+// TIMER
+// =============================================================================
+function fmt(s) { 
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sc = s%60; 
+  return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${sc.toString().padStart(2,'0')}`; 
+}
+
+function startTimer() { 
+  document.getElementById('btn-start').style.display='none'; 
+  document.getElementById('btn-stop').style.display='block'; 
+  timerInt = setInterval(()=>{ 
+    timerSecs++; 
+    document.getElementById('timer-display').innerText=fmt(timerSecs);
+  }, 1000); 
+}
+
+function stopTimer() { 
+  clearInterval(timerInt); 
+  document.getElementById('btn-start').style.display='block'; 
+  document.getElementById('btn-stop').style.display='none'; 
+}
+
+function addTime(hours) {
+  if(hours <= 0) return;
+  const me = db.users[db.myId];
+  const multiplier = getMultiplier();
+  me.daily += hours; 
+  me.weekly += hours; 
+  me.total += hours;
+  saveDb(); 
+  updateHome(); 
+  showToast(`✅ ${(hours * multiplier).toFixed(2)}h পড়া হয়েছে!`); 
+  goTo('screen-home');
+}
+
+function submitTimer() { 
+  stopTimer(); 
+  addTime(timerSecs/3600); 
+  timerSecs=0; 
+  document.getElementById('timer-display').innerText="00:00:00"; 
+}
+
+function submitManual() { 
+  const h = parseInt(document.getElementById('man-h').value)||0, 
+        m = parseInt(document.getElementById('man-m').value)||0; 
+  addTime(h + (m/60)); 
+  document.getElementById('man-h').value=''; 
+  document.getElementById('man-m').value=''; 
+}
+
+// =============================================================================
+// SPINNER
+// =============================================================================
+function spinTheWheel() {
+  const spinner = document.getElementById('spinner');
+  const allUsers = Object.values(db.users).filter(u => u.name !== db.users[db.myId].name);
+  
+  if(allUsers.length === 0) {
+    showToast('❌ কোন অপোনেন্ট নেই!');
+    return;
+  }
+  
+  spinner.classList.add('spinning');
+  spinner.style.animation = 'none';
+  
+  setTimeout(() => {
+    const randomUser = allUsers[Math.floor(Math.random() * allUsers.length)];
+    
+    db.spinResult = {
+      name: randomUser.name,
+      team: randomUser.team,
+      id: Object.keys(db.users).find(k => db.users[k] === randomUser)
+    };
+    
+    spinner.classList.remove('spinning');
+    spinner.style.animation = '';
+    
+    document.getElementById('spinner-opponent-name').innerText = randomUser.name;
+    document.getElementById('spinner-opponent-team').innerText = randomUser.team;
+    document.getElementById('spinner-result').style.display = 'block';
+    document.getElementById('spinner-match-btn').style.display = 'block';
+    
+    showToast(`🎁 ${randomUser.name} আপনার অপোনেন্ট!`);
+  }, 2000);
+}
+
+async function acceptSpinMatch() {
+  if (!db.spinResult) return;
+  
+  try {
+    const res = await fetch(API_URL + '/find_match', {
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ myId: db.myId })
+    });
+    
+    const data = await res.json();
+    if (data.status === 'matched') {
+      db.activeOpponent = data.opponent;
+      goTo('screen-challenge');
+      updateChallengeScreen();
+    }
+  } catch(e) {}
+}
+
+// =============================================================================
+// TODOS
+// =============================================================================
+function renderTodos() {
+  const c = document.getElementById('todo-container');
+  c.innerHTML = db.todos.map((t, i) => `
+    <div class="list-item" onclick="toggleTodo(${i})" style="margin:0 16px 8px; cursor:pointer;">
+      <div style="width:24px; height:24px; border-radius:50%; border:2px solid var(--accent3); background:${t.done?'var(--accent3)':'transparent'}; display:flex; align-items:center; justify-content:center;">${t.done?'✅':''}</div>
+      <div style="flex:1; font-size:15px; text-decoration:${t.done?'line-through':'none'}; color:${t.done?'var(--muted)':'white'}">${t.text}</div>
+    </div>
+  `).join('');
+}
+
+function addTodo() {
+  const text = document.getElementById('todo-input').value.trim();
+  if(!text) return;
+  db.todos.push({ text, done: false }); 
+  document.getElementById('todo-input').value = '';
+  localStorage.setItem('studyWarsTodos', JSON.stringify(db.todos)); 
+  renderTodos();
+}
+
+function toggleTodo(index) {
+  db.todos[index].done = !db.todos[index].done;
+  if(db.todos[index].done) db.users[db.myId].tasksDone = (db.users[db.myId].tasksDone||0) + 1;
+  else db.users[db.myId].tasksDone = Math.max(0, (db.users[db.myId].tasksDone||0) - 1);
+  saveDb(); 
+  localStorage.setItem('studyWarsTodos', JSON.stringify(db.todos)); 
+  renderTodos();
+}
+
+// =============================================================================
+// MATCHMAKING
+// =============================================================================
+async function findMatch() {
+  document.getElementById('btn-find-match').style.display = 'none';
+  document.getElementById('waiting-msg').style.display = 'block';
+  
+  if(!pollInterval) {
+    pollInterval = setInterval(checkMatchStatus, 2000);
+  }
+}
+
+async function checkMatchStatus() {
+  try {
+    const res = await fetch(API_URL + '/find_match', {
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ myId: db.myId })
+    });
+    const data = await res.json();
+    
+    if(data.status === 'matched') {
+      clearInterval(pollInterval); 
+      pollInterval = null;
+      db.activeOpponent = data.opponent;
+      
+      document.getElementById('arena-wait').style.display = 'none';
+      document.getElementById('arena-live').style.display = 'block';
+      updateChallengeScreen();
+    } else if(data.status === 'waiting') {
+      document.getElementById('arena-wait').style.display = 'block';
+      document.getElementById('arena-live').style.display = 'none';
+      document.getElementById('btn-find-match').style.display = 'none';
+      document.getElementById('waiting-msg').style.display = 'block';
+      if(data.players_in_queue) {
+        document.getElementById('queue-count').style.display = 'block';
+        document.getElementById('queue-count').innerText = `কিউতে: ${data.players_in_queue} জন খেলোয়াড়`;
+      }
+    }
+  } catch(e) {}
+}
+
+function updateChallengeScreen() {
+  if(!db.activeOpponent || !db.users[db.activeOpponent]) return;
+  const me = db.users[db.myId];
+  const op = db.users[db.activeOpponent];
+  
+  document.getElementById('c-my-name').innerText = me.name;
+  document.getElementById('c-my-score').innerText = (me.daily * getMultiplier()).toFixed(1) + 'h';
+  document.getElementById('c-op-name').innerText = op.name;
+  document.getElementById('c-op-score').innerText = (op.daily * getMultiplier()).toFixed(1) + 'h';
+}
+
+async function cancelMatch() {
+  try {
+    await fetch(API_URL + '/cancel_match', {
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ myId: db.myId })
+    });
+    db.activeOpponent = null;
+    document.getElementById('arena-wait').style.display = 'block';
+    document.getElementById('arena-live').style.display = 'none';
+    document.getElementById('btn-find-match').style.display = 'block';
+    document.getElementById('waiting-msg').style.display = 'none';
+  } catch(e) {}
+}
+
+// =============================================================================
+// LEADERBOARD
+// =============================================================================
+let currentLbMode = 'daily';
+function renderLeaderboard(mode) {
+  if(mode) currentLbMode = mode;
+  document.getElementById('tab-daily').className = currentLbMode==='daily' ? 'tab-btn active' : 'tab-btn inactive';
+  document.getElementById('tab-weekly').className = currentLbMode==='weekly' ? 'tab-btn active' : 'tab-btn inactive';
+
+  const list = Object.entries(db.users).map(([id, u]) => ({
+    id, 
+    ...u,
+    score: currentLbMode === 'daily' ? u.daily * getMultiplier() : u.weekly * getMultiplier()
+  })).sort((a, b) => {
+    if (b.score === a.score) return (b.tasksDone||0) - (a.tasksDone||0);
+    return b.score - a.score;
+  });
+
+  const c = document.getElementById('lb-container');
+  c.innerHTML = list.map((u, i) => {
+    const medal = i===0?'👑':i===1?'🥈':i===2?'🥉':(i+1);
+    const isLive = u.daily > 0;
+    return `
+      <div class="list-item">
+        <div class="lb-rank">${medal}</div>
+        <div class="lb-name">
+          ${u.name}
+          <div style="font-size:11px; color:var(--muted); font-weight:normal">
+            ✅ ${u.tasksDone||0} টাস্ক | <span style="color: ${getTeamColor(u.team)}">${u.team}</span>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="lb-score">${u.score.toFixed(1)}<span style="font-size:14px; color:var(--muted)">h</span></div>
+          ${isLive ? '<button class="cheer-btn" onclick="cheerUser(\'' + u.id + '\')">👏</button>' : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function cheerUser(userId) {
+  if (!db.users[userId]) return;
+  const user = db.users[userId];
+  showToast(`👏 ${user.name} কে উৎসাহ দিয়েছেন!`);
+}
+
+// =============================================================================
+// TEAM BOARD
+// =============================================================================
+let currentTeamMode = 'daily';
+function renderTeamBoard(mode) {
+  if(mode) currentTeamMode = mode;
+  document.getElementById('tab-team-daily').className = currentTeamMode==='daily' ? 'tab-btn active' : 'tab-btn inactive';
+  document.getElementById('tab-team-weekly').className = currentTeamMode==='weekly' ? 'tab-btn active' : 'tab-btn inactive';
+
+  const teams = {};
+  Object.entries(db.users).forEach(([id, u]) => {
+    const score = currentTeamMode === 'daily' ? u.daily * getMultiplier() : u.weekly * getMultiplier();
+    if (!teams[u.team]) teams[u.team] = { members: [], total: 0, color: getTeamColor(u.team) };
+    teams[u.team].members.push({ name: u.name, score, tasks: u.tasksDone || 0 });
+    teams[u.team].total += score;
+  });
+
+  const c = document.getElementById('team-container');
+  const sorted = Object.entries(teams).sort((a, b) => b[1].total - a[1].total);
+  
+  c.innerHTML = sorted.map((entry, idx) => {
+    const [teamName, teamData] = entry;
+    const medal = idx===0?'👑':idx===1?'🥈':idx===2?'🥉':'';
+    return `
+      <div class="team-card" style="border-left: 4px solid ${teamData.color};">
+        <div class="team-header" style="color: ${teamData.color};">
+          ${medal} ${teamName} - ${teamData.total.toFixed(1)}h
+        </div>
+        <div style="font-size: 12px; color: var(--muted); margin-bottom: 8px;">
+          ${teamData.members.length} সদস্য
+        </div>
+        ${teamData.members.map(m => `
+          <div style="font-size: 13px; padding: 4px 0; border-bottom: 1px solid var(--border);">
+            ${m.name}: <span style="color: var(--accent);">${m.score.toFixed(1)}h</span> (✅ ${m.tasks})
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }).join('');
+}
+
+// =============================================================================
+// HISTORY
+// =============================================================================
+function renderHistory() {
+  const history = db.history || [];
+  
+  if(history.length === 0) {
+    document.getElementById('history-container').innerHTML = '<p style="text-align:center; color:var(--muted); padding:20px;">এখনো কোন ডেটা নেই</p>';
+    return;
+  }
+  
+  let html = '';
+  [...history].reverse().forEach(entry => {
+    html += `
+      <div class="list-item" style="margin-bottom: 12px;">
+        <div style="flex:1;">
+          <div style="font-weight:700; font-size:14px;">${entry.date}</div>
+          <div style="font-size:12px; color:var(--muted);">📚 ${entry.daily || entry.score || 0}h | 🔥 বিজয়ী: <span style="color:var(--accent)">${entry.winner}</span></div>
+        </div>
+      </div>
+    `;
+  });
+  document.getElementById('history-container').innerHTML = html;
+}
+
+// =============================================================================
+// ADMIN PANEL
+// =============================================================================
+function loadAdminPanel() {
+  const users = Object.values(db.users);
+  const dailyTop = users.sort((a, b) => b.daily - a.daily)[0];
+  const weeklyTop = users.sort((a, b) => b.weekly - a.weekly)[0];
+  
+  const winnerSelect = document.getElementById('admin-daily-winner');
+  winnerSelect.innerHTML = users.map(u => 
+    `<option value="${u.name}" ${u.name === dailyTop?.name ? 'selected' : ''}>${u.name}</option>`
+  ).join('');
+  
+  const weeklySelect = document.getElementById('admin-weekly-winner');
+  weeklySelect.innerHTML = users.map(u => 
+    `<option value="${u.name}" ${u.name === weeklyTop?.name ? 'selected' : ''}>${u.name}</option>`
+  ).join('');
+  
+  let statsHtml = '<table style="width:100%; font-size:12px; color:var(--muted); text-align:left;"><tr style="border-bottom: 1px solid var(--border);"><th style="padding: 8px 0;">নাম</th><th>আজকে</th><th>সাপ্তাহিক</th><th>মোট</th></tr>';
+  users.forEach(u => {
+    statsHtml += `<tr style="border-bottom: 1px solid var(--border);">
+      <td style="padding: 4px 0;">${u.name}</td>
+      <td>${(u.daily * getMultiplier()).toFixed(1)}h</td>
+      <td>${(u.weekly * getMultiplier()).toFixed(1)}h</td>
+      <td>${(u.total * getMultiplier()).toFixed(1)}h</td>
+    </tr>`;
+  });
+  statsHtml += '</table>';
+  document.getElementById('admin-stats').innerHTML = statsHtml;
+}
+
+function sendAnnouncement() {
+  const msg = document.getElementById('admin-msg').value.trim();
+  if (!msg) return showToast('বার্তা লিখুন!');
+  
+  db.announcement = msg;
+  showAnnouncement();
+  saveDb();
+  showToast('📣 সবাইকে বার্তা পাঠানো হয়েছে!');
+  document.getElementById('admin-msg').value = '';
+}
+
+function setWinners() {
+  showToast('👑 বিজয়ী সেট করা হয়েছে!');
+  loadAdminPanel();
+}
+</script>
+</body>
+</html>

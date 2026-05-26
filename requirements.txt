@@ -1,0 +1,14 @@
+# Flask - ওয়েব ফ্রেমওয়ার্ক
+Flask==3.0.0
+Flask-CORS==4.0.0
+
+# Telegram - বট এবং মিনি অ্যাপ
+python-telegram-bot==20.5
+
+# Server
+gunicorn==21.2.0
+Werkzeug==3.0.1
+
+# Utilities
+python-dotenv==1.0.0
+requests==2.31.0
