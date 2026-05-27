@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Wars - Gamified Learning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        .faction-card {
+            transition: all 0.3s ease;
+        }
+        .faction-card:hover {
+            transform: translateY(-5px);
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen pb-12">
+
+    <!-- NAVBAR -->
+    <nav class="bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-50 shadow-md">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-shield-halved font-bold text-xl text-indigo-500"></i>
+                <span class="font-bold text-xl tracking-wider text-slate-100">STUDY WARS</span>
+            </div>
+            <div id="user-nav-status" class="hidden flex items-center space-x-3">
+                <span id="nav-username" class="font-medium text-indigo-400"></span>
+                <span id="nav-faction-badge" class="px-2 py-0.5 rounded text-xs font-bold uppercase"></span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto px-4 mt-6">
+        
+        <!-- ANNOUNCEMENT -->
+        <div id="announcement-box" class="hidden bg-indigo-950/40 border border-indigo-800/60 p-4 rounded-xl mb-6 flex items-start space-x-3 fade-in">
+            <i class="fa-solid fa-bullhorn text-indigo-400 mt-1"></i>
+            <div>
+                <h4 class="font-bold text-indigo-300 text-sm uppercase tracking-wider">📢 Announcement</h4>
+                <p id="announcement-text" class="text-slate-300 mt-0.5 text-sm"></p>
+            </div>
+        </div>
+
+        <!-- REGISTER SCREEN -->
+        <div id="register-screen" class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl max-w-md mx-auto mt-12 fade-in">
+            <h2 class="text-2xl font-bold text-center mb-2">⚔️ Join Study Wars</h2>
+            <p class="text-slate-400 text-center text-sm mb-6">Register and choose your faction to start the battle.</p>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-1">Telegram User ID</label>
+                    <input type="text" id="reg-id" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-indigo-500" placeholder="e.g. 5726202509">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-1">Code Name</label>
+                    <input type="text" id="reg-name" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-indigo-500" placeholder="e.g. StudyMaster">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-2">Choose Faction</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div onclick="selectFaction('Alpha')" id="fac-Alpha" class="faction-card border border-slate-800 bg-slate-950 p-3 rounded-xl cursor-pointer text-center hover:border-red-500">
+                            <span class="block font-bold text-red-500">ALPHA</span>
+                            <span class="text-[10px] text-slate-500">The Warriors</span>
+                        </div>
+                        <div onclick="selectFaction('Beta')" id="fac-Beta" class="faction-card border border-slate-800 bg-slate-950 p-3 rounded-xl cursor-pointer text-center hover:border-blue-500">
+                            <span class="block font-bold text-blue-500">BETA</span>
+                            <span class="text-[10px] text-slate-500">The Strategists</span>
+                        </div>
+                        <div onclick="selectFaction('Gamma')" id="fac-Gamma" class="faction-card border border-slate-800 bg-slate-950 p-3 rounded-xl cursor-pointer text-center hover:border-green-500">
+                            <span class="block font-bold text-green-500">GAMMA</span>
+                            <span class="text-[10px] text-slate-500">The Guardians</span>
+                        </div>
+                        <div onclick="selectFaction('Delta')" id="fac-Delta" class="faction-card border border-slate-800 bg-slate-950 p-3 rounded-xl cursor-pointer text-center hover:border-purple-500">
+                            <span class="block font-bold text-purple-500">DELTA</span>
+                            <span class="text-[10px] text-slate-500">The Scholars</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="registerUser()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-4 rounded-xl mt-4 shadow-lg shadow-indigo-600/20 transition">
+                    Join the War ⚔️
+                </button>
+            </div>
+        </div>
+
+        <!-- MAIN DASHBOARD -->
+        <div id="main-dashboard" class="hidden space-y-6 fade-in">
+            
+            <!-- STATS GRID -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center space-x-3">
+                    <div class="p-3 bg-amber-500/10 text-amber-500 rounded-lg"><i class="fa-solid fa-star text-xl"></i></div>
+                    <div>
+                        <span class="text-xs text-slate-400 block">Total XP</span>
+                        <span id="stat-xp" class="text-xl font-bold">0</span>
+                    </div>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center space-x-3">
+                    <div class="p-3 bg-red-500/10 text-red-500 rounded-lg"><i class="fa-solid fa-fire text-xl"></i></div>
+                    <div>
+                        <span class="text-xs text-slate-400 block">Streak</span>
+                        <span id="stat-streak" class="text-xl font-bold">0 Days</span>
+                    </div>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center space-x-3">
+                    <div class="p-3 bg-emerald-500/10 text-emerald-500 rounded-lg"><i class="fa-solid fa-clock text-xl"></i></div>
+                    <div>
+                        <span class="text-xs text-slate-400 block">Today Study</span>
+                        <span id="stat-daily" class="text-xl font-bold">0m</span>
+                    </div>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center space-x-3">
+                    <div class="p-3 bg-indigo-500/10 text-indigo-500 rounded-lg"><i class="fa-solid fa-graduation-cap text-xl"></i></div>
+                    <div>
+                        <span class="text-xs text-slate-400 block">Level</span>
+                        <span id="stat-level" class="text-xl font-bold">Lvl 1</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <!-- LEFT COLUMN -->
+                <div class="md:col-span-2 space-y-6">
+                    
+                    <!-- FOCUS TIMER -->
+                    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl text-center">
+                        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-500" style="position: relative;"></div>
+                        <h3 class="text-lg font-bold tracking-wider text-slate-400 uppercase mb-4">⏱️ Focus Timer</h3>
+                        <div id="timer-display" class="text-5xl font-mono font-bold tracking-widest my-4 text-indigo-400">00:00:00</div>
+                        
+                        <div class="flex justify-center space-x-3 mt-6 flex-wrap">
+                            <button id="btn-start-timer" onclick="startTimer()" class="bg-indigo-600 hover:bg-indigo-500 px-6 py-2.5 rounded-xl font-bold transition flex items-center space-x-2">
+                                <i class="fa-solid fa-play"></i> <span>Start</span>
+                            </button>
+                            <button id="btn-pause-timer" onclick="pauseTimer()" class="hidden bg-amber-600 hover:bg-amber-500 px-6 py-2.5 rounded-xl font-bold transition flex items-center space-x-2">
+                                <i class="fa-solid fa-pause"></i> <span>Pause</span>
+                            </button>
+                            <button onclick="stopAndSaveTimer()" class="bg-slate-800 hover:bg-slate-700 px-6 py-2.5 rounded-xl font-bold transition text-red-400 flex items-center space-x-2">
+                                <i class="fa-solid fa-stop"></i> <span>Save</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 1V1 MATCHMAKING -->
+                    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
+                        <h3 class="text-lg font-bold text-slate-200 mb-2 flex items-center space-x-2">
+                            <i class="fa-solid fa-crosshairs text-red-500"></i> <span>1v1 Arena</span>
+                        </h3>
+                        <p class="text-xs text-slate-400 mb-4">Find an opponent and battle head-to-head!</p>
+                        
+                        <div id="arena-initial" class="text-center py-4">
+                            <button onclick="findMatch()" class="bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-red-900/30 transition">
+                                Find Match ⚔️
+                            </button>
+                        </div>
+
+                        <div id="arena-queue" class="hidden text-center py-4 space-y-3">
+                            <div class="flex items-center justify-center space-x-3">
+                                <div class="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+                                <span class="text-amber-400 font-medium">Searching...</span>
+                            </div>
+                            <p class="text-xs text-slate-500">Queue: <span id="queue-count">1</span></p>
+                            <button onclick="cancelMatch()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-400 px-4 py-1.5 rounded-lg transition">
+                                Cancel
+                            </button>
+                        </div>
+
+                        <div id="arena-matched" class="hidden bg-slate-950 border border-red-900/50 p-4 rounded-xl text-center space-y-3">
+                            <span class="bg-red-500/10 text-red-500 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded border border-red-500/20 inline-block">Matched!</span>
+                            <div class="flex justify-center items-center space-x-6 py-2">
+                                <div>
+                                    <span class="block font-bold text-indigo-400" id="match-my-name">You</span>
+                                </div>
+                                <span class="text-slate-600 font-bold tracking-widest">VS</span>
+                                <div>
+                                    <span class="block font-bold text-red-400" id="match-opp-name">Opponent</span>
+                                </div>
+                            </div>
+                            <button onclick="cancelMatch()" class="text-xs bg-red-950/40 border border-red-900 text-red-400 px-4 py-1.5 rounded-lg hover:bg-red-900/20 transition">
+                                Finish Match
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- DAILY TASKS -->
+                    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
+                        <h3 class="text-lg font-bold text-slate-200 mb-4 flex items-center space-x-2">
+                            <i class="fa-solid fa-list-check text-indigo-500"></i> <span>Daily Tasks</span>
+                        </h3>
+                        <div class="flex space-x-2 mb-4">
+                            <input type="text" id="todo-input" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500" placeholder="Add a task...">
+                            <button onclick="addTodo()" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg font-bold text-sm transition">
+                                Add
+                            </button>
+                        </div>
+                        <ul id="todo-list" class="space-y-2 max-h-60 overflow-y-auto pr-1"></ul>
+                    </div>
+
+                </div>
+
+                <!-- RIGHT COLUMN -->
+                <div class="space-y-6">
+                    
+                    <!-- GLOBAL LEADERBOARD -->
+                    <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl flex flex-col">
+                        <h3 class="text-md font-bold text-slate-200 mb-3 flex items-center space-x-2">
+                            <i class="fa-solid fa-trophy text-amber-500"></i> <span>Top Players</span>
+                        </h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead>
+                                    <tr class="border-b border-slate-800 text-[11px] uppercase tracking-wider text-slate-500">
+                                        <th class="pb-2">Rank</th>
+                                        <th class="pb-2">XP</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="leaderboard-body" class="divide-y divide-slate-800/40">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- FACTION LEADERBOARD -->
+                    <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl">
+                        <h3 class="text-md font-bold text-slate-200 mb-3 flex items-center space-x-2">
+                            <i class="fa-solid fa-flag text-indigo-400"></i> <span>Factions</span>
+                        </h3>
+                        <div class="space-y-3" id="faction-board"></div>
+                    </div>
+
+                    <!-- ADMIN PANEL -->
+                    <div id="admin-panel" class="hidden bg-slate-900 border border-red-900/40 p-4 rounded-2xl shadow-xl">
+                        <h3 class="text-md font-bold text-red-400 mb-2 flex items-center space-x-2">
+                            <i class="fa-solid fa-unlock-keyhole"></i> <span>Admin</span>
+                        </h3>
+                        <div class="space-y-2">
+                            <textarea id="admin-announcement" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-red-500" rows="2" placeholder="Announcement..."></textarea>
+                            <button onclick="publishAnnouncement()" class="w-full bg-red-950/60 border border-red-700 hover:bg-red-900/40 text-red-200 font-bold py-1.5 px-3 rounded-lg text-xs transition">
+                                Broadcast
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════════
+        // CONFIG
+        // ═══════════════════════════════════════════════════════════════
+        const API_URL = window.location.origin + "/api";
+
+        let currentUserId = localStorage.getItem('study_wars_uid') || '';
+        let selectedFactionName = '';
+        let globalState = {};
+        let timerInterval = null;
+        let elapsedSeconds = 0;
+        let isTimerRunning = false;
+
+        // ═══════════════════════════════════════════════════════════════
+        // INITIALIZATION
+        // ═══════════════════════════════════════════════════════════════
+        window.addEventListener('DOMContentLoaded', () => {
+            if (currentUserId) {
+                showDashboard();
+                syncData();
+                setInterval(syncData, 5000);
+                setInterval(pollMatchmaking, 3000);
+            } else {
+                document.getElementById('register-screen').classList.remove('hidden');
+            }
+        });
+
+        // ═══════════════════════════════════════════════════════════════
+        // FUNCTIONS
+        // ═══════════════════════════════════════════════════════════════
+
+        function selectFaction(faction) {
+            selectedFactionName = faction;
+            document.querySelectorAll('.faction-card').forEach(c => {
+                c.classList.remove('border-red-500', 'border-blue-500', 'border-green-500', 'border-purple-500', 'bg-slate-900');
+            });
+            const colorMap = { 'Alpha': 'border-red-500', 'Beta': 'border-blue-500', 'Gamma': 'border-green-500', 'Delta': 'border-purple-500' };
+            document.getElementById(`fac-${faction}`).classList.add(colorMap[faction], 'bg-slate-900');
+        }
+
+        async function registerUser() {
+            const uid = document.getElementById('reg-id').value.trim();
+            const name = document.getElementById('reg-name').value.trim();
+            
+            if (!uid || !name || !selectedFactionName) {
+                alert('Fill all fields and choose a faction.');
+                return;
+            }
+
+            const initialUser = {
+                name: name,
+                faction: selectedFactionName,
+                xp: 0,
+                daily: 0,
+                streak: 0,
+                maxStreak: 0,
+                todos: [],
+                last_reset: new Date().toISOString().split('T')[0]
+            };
+
+            try {
+                const res = await fetch(`${API_URL}/update_data`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ myId: uid, userData: initialUser })
+                });
+                const data = await res.json();
+                if(data.status === 'success') {
+                    localStorage.setItem('study_wars_uid', uid);
+                    currentUserId = uid;
+                    showDashboard();
+                    syncData();
+                }
+            } catch(e) {
+                alert('Connection error: ' + e.message);
+            }
+        }
+
+        function showDashboard() {
+            document.getElementById('register-screen').classList.add('hidden');
+            document.getElementById('main-dashboard').classList.remove('hidden');
+            document.getElementById('user-nav-status').classList.remove('hidden');
+            if (currentUserId === '5726202509') {
+                document.getElementById('admin-panel').classList.remove('hidden');
+            }
+        }
+
+        async function syncData() {
+            if (!currentUserId) return;
+            try {
+                const res = await fetch(`${API_URL}/get_data`);
+                const data = await res.json();
+                globalState = data;
+
+                if(data.announcement) {
+                    document.getElementById('announcement-box').classList.remove('hidden');
+                    document.getElementById('announcement-text').innerText = data.announcement;
+                } else {
+                    document.getElementById('announcement-box').classList.add('hidden');
+                }
+
+                const myData = data.users[currentUserId];
+                if(myData) {
+                    document.getElementById('nav-username').innerText = `@${myData.name}`;
+                    const badge = document.getElementById('nav-faction-badge');
+                    badge.innerText = myData.faction;
+                    
+                    const colorMap = {
+                        'Alpha': 'bg-red-500/20 text-red-400',
+                        'Beta': 'bg-blue-500/20 text-blue-400',
+                        'Gamma': 'bg-green-500/20 text-green-400',
+                        'Delta': 'bg-purple-500/20 text-purple-400'
+                    };
+                    badge.className = "px-2 py-0.5 rounded text-xs font-bold uppercase " + (colorMap[myData.faction] || '');
+
+                    document.getElementById('stat-xp').innerText = myData.xp;
+                    document.getElementById('stat-streak').innerText = `${myData.streak || 0} Days`;
+                    document.getElementById('stat-daily').innerText = `${myData.daily || 0}m`;
+                    document.getElementById('stat-level').innerText = `Lvl ${Math.floor(myData.xp / 500) + 1}`;
+
+                    renderTodos(myData.todos || []);
+                }
+
+                renderLeaderboard(data.users);
+            } catch(e) {
+                console.error("Sync error:", e);
+            }
+        }
+
+        function startTimer() {
+            if (isTimerRunning) return;
+            isTimerRunning = true;
+            document.getElementById('btn-start-timer').classList.add('hidden');
+            document.getElementById('btn-pause-timer').classList.remove('hidden');
+            
+            timerInterval = setInterval(() => {
+                elapsedSeconds++;
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            isTimerRunning = false;
+            document.getElementById('btn-start-timer').classList.remove('hidden');
+            document.getElementById('btn-pause-timer').classList.add('hidden');
+            clearInterval(timerInterval);
+        }
+
+        async function stopAndSaveTimer() {
+            pauseTimer();
+            if(elapsedSeconds < 10) {
+                alert("Study at least 10 seconds.");
+                elapsedSeconds = 0;
+                updateTimerDisplay();
+                return;
+            }
+
+            const minutesStudied = Math.floor(elapsedSeconds / 60) || 1;
+            const xpGained = minutesStudied * 10;
+
+            let myData = globalState.users[currentUserId];
+            if(myData) {
+                myData.xp = (myData.xp || 0) + xpGained;
+                myData.daily = (myData.daily || 0) + minutesStudied;
+                
+                await fetch(`${API_URL}/update_data`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ myId: currentUserId, userData: myData })
+                });
+                alert(`Great! +${xpGained} XP for ${minutesStudied}m study!`);
+                elapsedSeconds = 0;
+                updateTimerDisplay();
+                syncData();
+            }
+        }
+
+        function updateTimerDisplay() {
+            const hrs = String(Math.floor(elapsedSeconds / 3600)).padStart(2, '0');
+            const mins = String(Math.floor((elapsedSeconds % 3600) / 60)).padStart(2, '0');
+            const secs = String(elapsedSeconds % 60).padStart(2, '0');
+            document.getElementById('timer-display').innerText = `${hrs}:${mins}:${secs}`;
+        }
+
+        function renderTodos(todos) {
+            const listEl = document.getElementById('todo-list');
+            listEl.innerHTML = '';
+            todos.forEach((todo, idx) => {
+                const li = document.createElement('li');
+                li.className = "flex justify-between items-center bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/50 text-sm";
+                li.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" ${todo.completed ? 'checked' : ''} onchange="toggleTodo(${idx})" class="rounded border-slate-800">
+                        <span class="${todo.completed ? 'line-through text-slate-500' : 'text-slate-300'}">${todo.text}</span>
+                    </div>
+                    <span class="text-[10px] font-bold ${todo.completed ? 'text-emerald-500' : 'text-slate-500'}">${todo.completed ? '+30 XP' : '30 XP'}</span>
+                `;
+                listEl.appendChild(li);
+            });
+        }
+
+        async function addTodo() {
+            const input = document.getElementById('todo-input');
+            const val = input.value.trim();
+            if(!val) return;
+
+            let myData = globalState.users[currentUserId];
+            if(myData) {
+                if(!myData.todos) myData.todos = [];
+                myData.todos.push({ text: val, completed: false });
+                input.value = '';
+                
+                await fetch(`${API_URL}/save_todo`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ myId: currentUserId, todos: myData.todos })
+                });
+                syncData();
+            }
+        }
+
+        async function toggleTodo(idx) {
+            let myData = globalState.users[currentUserId];
+            if(myData && myData.todos) {
+                const item = myData.todos[idx];
+                item.completed = !item.completed;
+                if(item.completed) {
+                    myData.xp = (myData.xp || 0) + 30;
+                } else {
+                    myData.xp = Math.max(0, (myData.xp || 0) - 30);
+                }
+
+                await fetch(`${API_URL}/update_data`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ myId: currentUserId, userData: myData })
+                });
+                syncData();
+            }
+        }
+
+        async function findMatch() {
+            document.getElementById('arena-initial').classList.add('hidden');
+            document.getElementById('arena-queue').classList.remove('hidden');
+
+            await fetch(`${API_URL}/find_match`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ myId: currentUserId })
+            });
+        }
+
+        async function cancelMatch() {
+            document.getElementById('arena-queue').classList.add('hidden');
+            document.getElementById('arena-matched').classList.add('hidden');
+            document.getElementById('arena-initial').classList.remove('hidden');
+
+            await fetch(`${API_URL}/cancel_match`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ myId: currentUserId })
+            });
+        }
+
+        async function pollMatchmaking() {
+            if(!currentUserId) return;
+            if(!document.getElementById('arena-queue').classList.contains('hidden') || !document.getElementById('arena-matched').classList.contains('hidden')) {
+                const res = await fetch(`${API_URL}/find_match`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ myId: currentUserId })
+                });
+                const data = await res.json();
+                
+                if(data.status === 'matched') {
+                    document.getElementById('arena-queue').classList.add('hidden');
+                    document.getElementById('arena-matched').classList.remove('hidden');
+                    document.getElementById('match-my-name').innerText = `@${globalState.users[currentUserId]?.name || 'You'}`;
+                    document.getElementById('match-opp-name').innerText = `@${globalState.users[data.opponent]?.name || 'Opponent'}`;
+                } else if(data.status === 'waiting') {
+                    document.getElementById('queue-count').innerText = data.players_in_queue || 1;
+                }
+            }
+        }
+
+        function renderLeaderboard(users) {
+            const tbody = document.getElementById('leaderboard-body');
+            tbody.innerHTML = '';
+
+            const userList = Object.entries(users).map(([id, u]) => ({ id, ...u }));
+            userList.sort((a, b) => b.xp - a.xp);
+
+            let facPoints = { Alpha: 0, Beta: 0, Gamma: 0, Delta: 0 };
+
+            userList.slice(0, 10).forEach((user, index) => {
+                if(user.faction) facPoints[user.faction] = (facPoints[user.faction] || 0) + user.xp;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-950/40 transition";
+                
+                let facColor = 'text-red-400';
+                if(user.faction === 'Beta') facColor = 'text-blue-400';
+                if(user.faction === 'Gamma') facColor = 'text-green-400';
+                if(user.faction === 'Delta') facColor = 'text-purple-400';
+
+                tr.innerHTML = `
+                    <td class="py-2.5 font-medium">
+                        <span class="text-xs text-slate-500">#${index + 1}</span>
+                        <span class="text-slate-200 ml-2">${user.name}</span>
+                    </td>
+                    <td class="py-2.5 text-right font-bold text-amber-400">${user.xp}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const factionBoard = document.getElementById('faction-board');
+            factionBoard.innerHTML = '';
+            
+            const sortedFactions = Object.entries(facPoints).sort((a, b) => b[1] - a[1]);
+
+            sortedFactions.forEach(([fac, score]) => {
+                const colors = { Alpha: 'text-red-400', Beta: 'text-blue-400', Gamma: 'text-green-400', Delta: 'text-purple-400' };
+                const div = document.createElement('div');
+                div.className = "bg-slate-950 p-2.5 border border-slate-800 rounded-xl flex justify-between items-center";
+                div.innerHTML = `
+                    <span class="font-bold text-xs uppercase tracking-wider ${colors[fac] || 'text-slate-400'}">${fac}</span>
+                    <span class="font-mono font-bold text-xs text-slate-300">${score} XP</span>
+                `;
+                factionBoard.appendChild(div);
+            });
+        }
+
+        async function publishAnnouncement() {
+            const msg = document.getElementById('admin-announcement').value.trim();
+            if(!msg) return;
+
+            const res = await fetch(`${API_URL}/set_announcement`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ adminId: currentUserId, message: msg })
+            });
+            const data = await res.json();
+            if(data.status === 'success') {
+                alert('Announcement sent!');
+                document.getElementById('admin-announcement').value = '';
+                syncData();
+            }
+        }
+    </script>
+</body>
+</html>

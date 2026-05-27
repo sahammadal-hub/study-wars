@@ -1,9 +1,18 @@
-# পরিবেশ ভেরিয়েবল
+# Secret Files - NEVER PUSH THESE
+*.env
 .env
-.env.local
-.env.*.local
+secrets.txt
+TOKEN.txt
+config.json
 
-# Python
+# Data Files (backup locally but don't commit)
+users.json
+study_data.json
+history.json
+active_matches.json
+announcement.json
+
+# Python stuff
 __pycache__/
 *.py[cod]
 *$py.class
@@ -34,30 +43,11 @@ wheels/
 *.swp
 *.swo
 *~
-.DS_Store
-
-# ডেটা ফাইল (local testing)
-data/
-*.json
-
-# Log ফাইল
-*.log
-logs/
-
-# Node (যদি কোন ফ্রন্টএন্ড থাকে)
-node_modules/
-npm-debug.log
 
 # OS
 .DS_Store
 Thumbs.db
 
-# ক্যাশ
-.cache/
-.pytest_cache/
-.coverage
-htmlcov/
-
-# Production
-dist/
-build/
+# Logs
+*.log
+logs/
